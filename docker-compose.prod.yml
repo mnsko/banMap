@@ -1,0 +1,19 @@
+# Requires Docker Compose >=2.24.4 for !override.
+# Run only after docs/deployment.md and the host egress guard are complete.
+services:
+  gateway:
+    ports: !override
+      - '0.0.0.0:22:2222'
+  app:
+    volumes:
+      - /var/log/banmap/fail2ban:/logs/fail2ban:ro
+  caddy:
+    environment:
+      DOMAIN: ${DOMAIN:-ssh.mnsk.me}
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: '0'
+    ports: !override
+      - '0.0.0.0:80:80'
+      - '0.0.0.0:443:443'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro

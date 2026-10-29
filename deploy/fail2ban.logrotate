@@ -1,0 +1,13 @@
+/var/log/banmap/fail2ban/fail2ban.log {
+    daily
+    rotate 90
+    maxage 90
+    missingok
+    notifempty
+    nocompress
+    create 0640 root 10001
+    sharedscripts
+    postrotate
+        /usr/bin/fail2ban-client flushlogs > /dev/null
+    endscript
+}

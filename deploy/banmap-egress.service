@@ -1,0 +1,14 @@
+[Unit]
+Description=BanMap honeypot host isolation
+Requires=docker.service
+After=docker.service
+PartOf=docker.service
+Before=banmap.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/banmap/install-egress-guard.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target docker.service

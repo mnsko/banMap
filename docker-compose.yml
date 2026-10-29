@@ -1,0 +1,138 @@
+name: banmap
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+services:
+  cowrie:
+    image: cowrie/cowrie:3.1.4@sha256:baf351038db967704dfa39f7ce860e8875c9456cdab72a9d3257c4247211050d
+    user: '999:999'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true, seccomp=./cowrie/seccomp.json]
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+    logging: *logging
+    networks:
+      honeypot:
+        ipv4_address: 172.30.77.2
+    dns: [192.0.2.1]
+    tmpfs:
+      - /tmp:size=16m,mode=1777,noexec,nosuid
+    volumes:
+      - ./cowrie/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro
+      - ./cowrie/userdb.txt:/cowrie/cowrie-git/etc/userdb.txt:ro
+      - cowrie-log:/cowrie/cowrie-git/var/log/cowrie
+      - cowrie-state:/cowrie/cowrie-git/var/lib/cowrie
+    healthcheck:
+      test: [CMD, /cowrie/cowrie-env/bin/python3, -c, 'from pathlib import Path; assert any(line.split()[1].endswith(":08AE") and line.split()[3]=="0A" for line in Path("/proc/net/tcp").read_text().splitlines()[1:])']
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      PASSWORD_MIN_IPS: ${PASSWORD_MIN_IPS:-3}
+      MASK_IPS: ${MASK_IPS:-false}
+      HIDE_IPS: ${HIDE_IPS:-}
+      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+      ENABLE_RDNS: ${ENABLE_RDNS:-false}
+      ENABLE_TOR: ${ENABLE_TOR:-false}
+    volumes:
+      - app-data:/data
+      - cowrie-log:/logs/cowrie:ro
+      - ./runtime/fail2ban:/logs/fail2ban:ro
+      - ./geoip:/geoip:ro
+    networks: [backend]
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/healthz",timeout=2)']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+  caddy:
+    build:
+      context: .
+      dockerfile: deploy/Caddy.Dockerfile
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      XDG_DATA_HOME: /data
+      XDG_CONFIG_HOME: /config
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    ports:
+      - '${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:8080'
+    networks: [web, backend]
+    depends_on:
+      app:
+        condition: service_healthy
+  gateway:
+    image: haproxy:3.2-alpine@sha256:5893840576071e6217cd52ebdcc14f454c6f7a631056fa6f4e0f40d3cac4215b
+    user: '65532:65532'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 64m
+    cpus: 0.5
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - '${HONEYPOT_BIND:-127.0.0.1}:${HONEYPOT_PORT:-2222}:2222'
+    volumes:
+      - ./gateway/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      cowrie:
+        condition: service_healthy
+    networks:
+      ingress:
+        ipv4_address: 172.30.78.2
+      honeypot:
+        ipv4_address: 172.30.77.3
+networks:
+  web:
+  backend:
+  ingress:
+    ipam:
+      config:
+        - subnet: 172.30.78.0/24
+  honeypot:
+    name: banmap-honeypot
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: br-banmap-hp
+    ipam:
+      config:
+        - subnet: 172.30.77.0/24
+volumes:
+  cowrie-log:
+  cowrie-state:
+  app-data:
+  caddy-data:
+  caddy-config:

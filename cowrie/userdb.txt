@@ -1,0 +1,6 @@
+# Deliberately weak accounts in the emulated shell only.
+root:x:root
+root:x:123456
+root:x:password
+admin:x:admin
+admin:x:123456

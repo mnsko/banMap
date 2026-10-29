@@ -1,0 +1,26 @@
+[
+  {
+    "name": "leaflet@1.9.4",
+    "url": "https://registry.npmjs.org/leaflet/-/leaflet-1.9.4.tgz",
+    "integrity": "sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==",
+    "files": {
+      "package/dist/leaflet.js": "leaflet.js",
+      "package/dist/leaflet.css": "leaflet.css",
+      "package/LICENSE": "leaflet-LICENSE",
+      "package/dist/images/layers.png": "images/layers.png",
+      "package/dist/images/layers-2x.png": "images/layers-2x.png",
+      "package/dist/images/marker-icon.png": "images/marker-icon.png",
+      "package/dist/images/marker-icon-2x.png": "images/marker-icon-2x.png",
+      "package/dist/images/marker-shadow.png": "images/marker-shadow.png"
+    }
+  },
+  {
+    "name": "chart.js@4.5.1",
+    "url": "https://registry.npmjs.org/chart.js/-/chart.js-4.5.1.tgz",
+    "integrity": "sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==",
+    "files": {
+      "package/dist/chart.umd.min.js": "chart.js",
+      "package/LICENSE.md": "chart-LICENSE.md"
+    }
+  }
+]
