@@ -86,3 +86,14 @@ def test_sse_limit(client):
 def test_no_private_username_before_threshold(client,event):
     client.app.state.db.insert(event(username='only-me'))
     assert client.get('/api/top/usernames').json()==[]
+
+
+def test_required_log_permission_failure_marks_unhealthy(client):
+    client.app.state.tailer.last_error='Log file unavailable'
+    assert client.get('/healthz').status_code==503
+    assert 'unavailable' in client.get('/healthz').text.lower()
+
+
+def test_global_sse_limit(client):
+    client.app.state.streams['other-client']=100
+    assert client.get('/api/stream').status_code==429

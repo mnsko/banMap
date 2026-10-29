@@ -49,6 +49,7 @@ class Database:
         self.conn.execute('PRAGMA busy_timeout=5000')
         self.conn.executescript(SCHEMA)
         self.conn.execute('INSERT OR IGNORE INTO metadata VALUES (?,?)', ('salt', secrets.token_hex(32)))
+        self.conn.execute('INSERT OR IGNORE INTO metadata VALUES (?,?)', ('sensor_started', utcnow().isoformat()))
         self.salt = self.conn.execute("SELECT value FROM metadata WHERE key='salt'").fetchone()[0].encode()
         self.conn.commit()
 

@@ -148,7 +148,7 @@ def create_app(settings=None, background=True):
     @app.get('/healthz')
     async def health():
         app.state.db.query('SELECT 1')
-        if not app.state.worker_ok:
+        if not app.state.worker_ok or app.state.tailer.last_error:
             raise HTTPException(503,'Service unavailable')
         return {'status':'ok','geo_city':bool(app.state.geo.city),'geo_asn':bool(app.state.geo.asn),
                 'last_ingest':app.state.last_ingest,'log_read_errors':app.state.tailer.errors}
@@ -169,10 +169,6 @@ def create_app(settings=None, background=True):
         result['uptime_seconds'] = round(time.monotonic()-app.state.started)
         first = result['first_event']
         origin = app.state.db.query("SELECT value FROM metadata WHERE key='sensor_started'")
-        if not origin:
-            with app.state.db.transaction() as c:
-                c.execute("INSERT OR IGNORE INTO metadata VALUES ('sensor_started',?)",(utcnow().isoformat(),))
-            origin = app.state.db.query("SELECT value FROM metadata WHERE key='sensor_started'")
         from datetime import datetime
         result['seconds_to_first_event'] = max(0,round((datetime.fromisoformat(first)-datetime.fromisoformat(origin[0]['value'])).total_seconds())) if first else None
         return result

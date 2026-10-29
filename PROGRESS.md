@@ -1,45 +1,57 @@
 # Stav projektu
 
-Aktualizováno: 2026-10-29. Tento dokument se aktualizuje společně s ověřenými milníky.
+Aktualizováno: 2026-10-29. Tento dokument se aktualizuje s ověřenými milníky; neověřené produkční kroky zůstávají výslovně otevřené.
 
-## Hotovo a ověřeno lokálně
+## Hotovo a ověřeno v lokálním cloudu
 
-- [x] Založení projektu podle `plan.md`, připnuté verze obrazů a Python závislosti s kontrolou hashů.
-- [x] Cowrie 3.1.4, emulovaný shell, vlastní UserDB, vypnutý telnet/SFTP/tunelování, limity session a stahovaných artefaktů.
-- [x] Skutečné lokální SSH přihlášení a emulovaný `uname -a`; testovací fixture pochází ze skutečného Cowrie logu s nahrazenou IP.
-- [x] Samostatná interní síť, HAProxy s původní IP, seccomp blokující nové odchozí TCP/UDP/DNS spojení.
-- [x] Kontrolní test potvrdil i blokaci spojení k živému listeneru na hostiteli; příchozí SSH nadále funguje.
-- [x] FastAPI, SQLite/WAL, Cowrie/fail2ban parsery, deduplikace, persistované offsety, částečné řádky, rename/copytruncate rotace a pozdní zápisy.
-- [x] Sanitizace, maskování tokenů, prahy různých IP pro jména/hesla/páry, explicitní veřejná projekce bez hesel.
-- [x] API s validací, cache, rate limitem, SSE a limity souběhu, IP masking, HIDE_IPS, retence a anonymní denní souhrny.
-- [x] Offline GeoLite2 integrace, volitelné PTR/Tor obohacení mimo hlavní ingest smyčku; testy chybějících DB a mockovaného City/ASN lookupu.
-- [x] 45 unit/integration testů parserů, úložiště, soukromí, API a bezpečnostních limitů prošlo.
+- [x] První milník pushnutý na GitHub `main`: commit `34479b1`.
+- [x] Cowrie 3.1.4 připnuté na digest, vlastní UserDB, emulovaný shell, vypnutý telnet/SFTP/tunelování, limity zdrojů/session/artefaktů. Konfigurace ověřena v aktuálním upstreamu i v běžícím kontejneru.
+- [x] Skutečné lokální SSH přihlášení a `uname -a`; anonymizovaná testovací fixture pochází ze skutečného Cowrie JSONL.
+- [x] Oddělená interní síť, HAProxy s PROXY protokolem a seccomp bez nových TCP/UDP/DNS spojení. Ověřena blokace internetu i aktivního listeneru na hostiteli; příchozí SSH zůstává funkční.
+- [x] FastAPI, SQLite/WAL, Cowrie/fail2ban parsery, atomické offsety, deduplikace i s NULL, částečné/poškozené/dlouhé řádky, rename/copytruncate a pozdní zápisy do rotace.
+- [x] Sanitizace, token masking, prahy různých IP pro jména/hesla/páry, výslovně bezpečná veřejná projekce. Hesla, příkazy ani syrové URL nejsou ve feedu/SSE.
+- [x] Read-only API, whitelist rozsahů, cache, rate limit, globální i klientské limity SSE, IP masking, HIDE_IPS, retence syrových dat a denní souhrny.
+- [x] GeoLite2 City a ASN, samostatné lookupy i při chybějícím záznamu v druhé DB, ochrana proti poškozené DB, bez souřadnic pro neveřejné IP. Ověřeno skutečnými veřejnými testovacími MMDB; nejsou vydávány za produkční GeoLite2.
+- [x] Volitelné PTR s timeoutem a Tor seznam mimo hlavní ingest smyčku; bezpečné předání MaxMind konfigurace oficiálnímu updateru ověřují integrační testy s nahrazeným upstreamem.
+- [x] Dashboard: mapa, všechny žebříčky, graf 24 h, heatmapa, přepínání rozsahu, feed, SSE, dialog o soukromí, uptime a počty dnes/celkem.
+- [x] Desktop 1440 px a mobil 390 px: bez JavaScript chyb a vodorovného přetékání; přepínače a dialog fungují. Testovaný HTML/XSS řetězec zůstává textem bez elementu/odkazu a bez spuštění.
+- [x] Lokální Natural Earth obrys světa zůstává dostupný při blokovaných externích CARTO dlaždicích. Chybějící produkční geolokace je v UI jasně označena.
+- [x] End-to-end SSH → skutečný log → SQLite → SSE opakovaně přibližně 1,5 s; unikátní testovací heslo se ve veřejných odpovědích neobjevuje.
+- [x] Restart aplikace zachovává historii bez duplicit.
+- [x] Runtime inspekce všech čtyř kontejnerů: non-root, read-only root, cap_drop ALL, no-new-privileges, limity CPU/RAM/PID. Aplikace nemá publikovaný port a zapisuje pouze do `/data`.
+- [x] 52 backend testů prošlo. Skripty pro browser, SSH/SSE, restart a izolaci jsou samostatně opakovatelné.
+- [x] `scripts/install.sh` byl skutečně spuštěn a prošel; ověřené wheelhouse a frontend artefakty, offline Docker build, oba Compose soubory validní, lokální i produkční Caddy konfigurace validní.
+- [x] README, původní plán, dokumentace Cowrie/izolace, bezpečný návod nasazení a provozní skripty.
+- [x] GitHub Actions workflow pro stejné kontroly; jeho vzdálený výsledek je samostatná věc, není nahrazován lokálními výsledky.
+- [x] Do cloudového draftu uloženy `install_script`, `start_skill` a přístup k `*.basemaps.cartocdn.com`. Draft není aplikace síťové změny ani publikace snapshotu.
 
-## Rozpracováno v aktuálním milníku
+## Stav fází původního plánu
 
-- [ ] Dokončení a ověření dashboardu v desktopovém i mobilním prohlížeči.
-- [x] End-to-end smoke: SSH → skutečný log → SQLite → veřejný feed/SSE za 1,532 s; tajné testovací heslo není ve veřejných odpovědích.
-- [ ] Samostatné ověření restartu bez duplicit.
-- [ ] Opakovatelné instalační/startovací skripty, produkční návod, CI a uložená cloudová konfigurace.
-- [ ] První push ověřeného základu na GitHub (připraven tento commit).
+| Fáze | Stav |
+|---|---|
+| 1. Host a honeypot | Lokální honeypot a izolace ověřeny; změny skutečného VPS čekají na operátora/přístup. |
+| 2. Aplikace a parsery | Hotovo a testováno. |
+| 3. Sanitizace | Hotovo, testy API i skutečného browser DOM. |
+| 4. Geolokace | Implementace a MMDB testy hotové; produkční databáze je potřeba dodat. |
+| 5. API | Hotovo a testováno. |
+| 6. Frontend | Hotovo, desktop/mobil ověřeny. |
+| 7. Živý režim | Hotovo, skutečná lokální SSH/SSE cesta ověřena. |
+| 8. Veřejné nasazení | Konfigurace a návod připraveny; skutečné HTTPS/VPS není nasazeno. |
+| 9. Volitelná rozšíření | Mimo v1. |
 
-## Vyžaduje skutečné VPS / vlastní konfiguraci
+## Co zbývá pro skutečné veřejné nasazení
 
-- [ ] Poskytovatel dovoluje honeypot; snapshot a funkční záchranná konzole.
-- [ ] DNS `ssh.mnsk.me` ukazuje na VPS. Ověřit i AAAA; nenechat nefunkční IPv6 záznam.
-- [ ] Správní SSH na 22022, pouze klíče, ne root, ověřeno z druhé relace před uvolněním 22.
-- [ ] Ověřit na Ubuntu 26.04 aktivní `ssh.socket`/`ssh.service` a efektivní konfiguraci sshd.
-- [ ] Aktivní fail2ban pouze pro správní SSH, čitelné UTC logy a retence na hostiteli.
-- [ ] Hostitelský DOCKER-USER/INPUT guard, persistence po restartu Dockeru a rebootu.
-- [ ] Licencované produkční GeoLite2 City + ASN a aktualizace. Bez nich nejsou mapové souřadnice.
-- [ ] Veřejné HTTPS/Caddy/ACME, HSTS, příchozí porty a end-to-end test z internetu.
-- [ ] Zálohy, monitoring místa, retence Cowrie logů a kontrola obnovení po rebootu VPS.
+- [ ] Poskytovatel dovoluje honeypot; snapshot a otestovaná záchranná konzole.
+- [ ] DNS `ssh.mnsk.me` ukazuje na VPS. Produkční override nyní publikuje IPv4; AAAA přidat až s navrženou a ověřenou IPv6 cestou.
+- [ ] Správní SSH 22022, pouze klíče, ne root, ověřeno z druhé relace před uvolněním 22.
+- [ ] Na Ubuntu 26.04 ověřit `ssh.socket`/`ssh.service` a efektivní `sshd -T`; žádná vzdálená SSH konfigurace zde nebyla změněna.
+- [ ] Aktivní fail2ban pouze pro správní SSH, UTC logy, čitelný vyhrazený log adresář a správná oprávnění po rotaci.
+- [ ] Nainstalovat a ověřit hostitelský DOCKER-USER/INPUT guard včetně persistence po restartu Dockeru a rebootu. Zde ověřena syntaxe skriptů a seccomp; hostitelská systemd/iptables konfigurace VPS nebyla aplikována.
+- [ ] Dodat licencované GeoLite2 City + ASN a nastavit aktualizace. Živé stažení pomocí vlastního MaxMind účtu nebylo bez přihlašovacích údajů provedeno.
+- [ ] Veřejné HTTPS/Caddy/ACME, HSTS, správné příchozí porty a end-to-end test z internetu včetně původní veřejné IP.
+- [ ] Zálohy, monitoring místa, pravidelné promazávání rotací a obnovení po rebootu VPS.
+- [ ] V cloudovém nastavení zkontrolovat a uložit draft, potom prostředí publikovat. Obnovení snapshotu v novém tasku dosud nebylo ověřeno.
 
-## Omezení a rozhodnutí
+## Důležité hranice
 
-- Lokální cloud není připojen ke skutečnému VPS. DNS, SSH/firewall VPS ani veřejné nasazení se zde nemění.
-- Výchozí správní port 22022; telnet je vypnutý; emulovaný login přes UserDB.
-- Plné IP dle zadání, volitelný `MASK_IPS`; hesla nikdy nejsou v feedu/SSE.
-- `range=all` u mapy a žebříčků znamená dostupné retenční okno; celoživotní souhrnné počty zůstávají zvlášť.
-- Doplňky fáze 9 (AbuseIPDB, export, více senzorů, týdenní přehledy) zůstávají mimo v1.
-- Žádné vnější nasazení ani nová cloudová snapshot verze zatím nebyly publikovány.
+Lokální cloud není připojen ke skutečnému VPS. Výchozí telnet je vypnutý, login používá UserDB a volitelné RDNS/Tor jsou vypnuté. Plné IP odpovídají zadání; `MASK_IPS` je volitelné. `range=all` u mapy a žebříčků znamená dostupné retenční okno; celoživotní souhrnné počty přetrvávají. HMAC identifikátory jsou pseudonymní, proto se DB, sůl, logy i zálohy musí chránit. Žádné externí nasazení ani nová cloudová snapshot verze nejsou tímto dokumentem prohlášeny za publikované.

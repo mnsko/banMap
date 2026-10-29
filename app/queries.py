@@ -19,7 +19,7 @@ class Queries:
         where, params = ('e.id>?',[after]) if after is not None else ('1=1',[])
         rows = self.db.query(f'''SELECT e.id,e.ts,e.type,e.ip,e.username,i.country,i.country_code,i.lat,i.lon
             FROM events e LEFT JOIN ip_info i ON e.ip=i.ip WHERE {where}
-            ORDER BY e.id {'ASC' if after is not None else 'DESC'} LIMIT ?''', (*params,limit))
+            ORDER BY {'e.id ASC' if after is not None else 'e.ts DESC,e.id DESC'} LIMIT ?''', (*params,limit))
         # An explicit allowlist: passwords, commands, raw URLs and session IDs never enter this projection.
         for row in rows:
             username = row['username']
@@ -85,12 +85,13 @@ class Queries:
             min(ts) first_event,sum(type IN {ATTEMPTS}) attempts FROM events WHERE ts>=?''',(since,))[0]
         repeat = self.db.query(f'''SELECT count(*) n FROM (SELECT ip FROM events WHERE ts>=? AND type IN {ATTEMPTS} GROUP BY ip HAVING count(*)>1)''',(since,))[0]['n']
         lifetime = self.db.query('SELECT COALESCE(sum(count),0) n FROM daily_counts')[0]['n']
+        lifetime_attempts = self.db.query(f'SELECT COALESCE(sum(count),0) n FROM daily_counts WHERE type IN {ATTEMPTS}')[0]['n']
         today = self.db.query(f'SELECT COALESCE(sum(count),0) n FROM daily_counts WHERE day=? AND type IN {ATTEMPTS}', (utcnow().date().isoformat(),))[0]['n']
         # Graph is always the last 24 hours; the range controls totals and the weekly heatmap.
         graph_since = (utcnow()-timedelta(hours=24)).isoformat(timespec='microseconds')
         series = self.db.query(f"SELECT strftime('%Y-%m-%dT%H:00:00Z',ts) hour,count(*) count FROM events WHERE ts>=? AND type IN {ATTEMPTS} GROUP BY hour ORDER BY hour", (graph_since,))
         heatmap = self.db.query(f"SELECT CAST(strftime('%w',ts) AS INTEGER) day,CAST(strftime('%H',ts) AS INTEGER) hour,count(*) count FROM events WHERE ts>=? AND type IN {ATTEMPTS} GROUP BY day,hour", (since,))
-        summary.update(attempts=summary['attempts'] or 0, attempts_today=today, lifetime_events=lifetime, repeat_attackers=repeat,
+        summary.update(lifetime_attempts=lifetime_attempts, attempts=summary['attempts'] or 0, attempts_today=today, lifetime_events=lifetime, repeat_attackers=repeat,
                        repeat_ratio=repeat/summary['unique_ips'] if summary['unique_ips'] else 0,
                        types=count_by_type, series=series, heatmap=heatmap,
                        lifetime_unique_ips=self.db.query('SELECT count(DISTINCT ip_hash) n FROM daily_ips')[0]['n'])

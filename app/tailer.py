@@ -1,6 +1,7 @@
 """Bounded JSONL ingestion; event inserts and cursor advances share a transaction."""
 from pathlib import Path
 import logging
+import os
 from . import cowrie_parser, f2b_parser
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ class Tailer:
         added = []
         try:
             with path.open('rb') as stream:
-                stat = path.stat()
+                stat = os.fstat(stream.fileno())
                 identity = f'{stat.st_dev}:{stat.st_ino}'
                 rows = self.db.query('SELECT * FROM cursors WHERE identity=?', (identity,))
                 offset, anchor = (rows[0]['offset'], rows[0]['anchor']) if rows else (0,b'')
@@ -54,6 +55,7 @@ class Tailer:
             return added
 
     def poll(self):
+        self.last_error = None
         added = []
         for base, parser in [(self.settings.cowrie_log, cowrie_parser.parse), (self.settings.f2b_log, f2b_parser.parse)]:
             # Replay dated rotations too: inode identities avoid losing late writes to a renamed log.

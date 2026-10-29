@@ -18,6 +18,14 @@ let map;
 try {
   map = L.map('map', {zoomControl: false, minZoom: 1, maxZoom: 10, worldCopyJump: true}).setView([23, 8], 2);
   L.control.zoom({position: 'bottomright'}).addTo(map);
+  // Self-hosted public-domain land geometry remains visible when tile egress is unavailable.
+  map.createPane('world-outline');
+  map.getPane('world-outline').style.zIndex = '150';
+  fetch('/static/world-land.geojson', {credentials: 'omit'})
+    .then(response => {if (!response.ok) throw new Error('World outline unavailable'); return response.json();})
+    .then(data => L.geoJSON(data, {pane: 'world-outline', interactive: false, style: {color: '#2b4149', weight: .6, fillColor: '#16262d', fillOpacity: 1}}).addTo(map))
+    .catch(() => {});
+
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" rel="noopener noreferrer">CARTO</a>',
     subdomains: 'abcd', maxZoom: 19, noWrap: true
@@ -98,6 +106,7 @@ function addFeed(row, live = false) {
 }
 function renderStats(stats) {
   $('attempts').textContent = number(stats.attempts);
+  $('attempts').nextElementSibling.textContent = number(stats.attempts_today) + ' today · ' + number(stats.lifetime_attempts) + ' lifetime';
   $('sources').textContent = number(stats.unique_ips);
   $('passwords').textContent = number(stats.passwords);
   $('repeat').textContent = Math.round(stats.repeat_ratio * 100) + '%';

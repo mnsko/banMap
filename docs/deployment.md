@@ -71,7 +71,7 @@ Spusť `scripts/check-egress.sh`. Potom skutečně otestuj nový příchozí SSH
 
 GeoLite2 City/ASN vyžadují vlastní oprávněný přístup od MaxMind. Databáze vlož do `geoip/` pod názvy `GeoLite2-City.mmdb` a `GeoLite2-ASN.mmdb` (0644). Aplikace při startu ověřuje čitelnost; chybná/chybějící DB se nesmí prezentovat jako funkční geolokace. `/healthz` uvádí oba stavy.
 
-Pro automatické aktualizace doporučujeme oficiální [geoipupdate](https://github.com/maxmind/geoipupdate). Nastav jeho AccountID, LicenseKey a EditionIDs `GeoLite2-City GeoLite2-ASN` v souboru s právy 0600 mimo Git a `DatabaseDirectory` na absolutní cestu `geoip/` tohoto projektu. Spouštěj pravidelně; wrapper `scripts/update-geoip.sh` po úspěchu ověří obě DB a restartuje pouze aplikaci. Klíče nejsou předávány veřejnému webovému procesu. Kontrola hashů/TLS náleží oficiálnímu updateru, nezakazuj ji.
+Pro automatické aktualizace doporučujeme oficiální [geoipupdate](https://github.com/maxmind/geoipupdate). Nastav `MAXMIND_ACCOUNT_ID` a `MAXMIND_LICENSE_KEY` v ignorovaném `.env` s právy 0600 (nebo v prostředí procesu). `scripts/update-geoip.sh` čte pouze tyto dvě hodnoty jako data, nikdy nespouští obsah `.env`, a předá je updateru prostřednictvím jeho oficiálních proměnných `GEOIPUPDATE_ACCOUNT_ID` / `GEOIPUPDATE_LICENSE_KEY`. Po úspěchu ověří oba typy DB a restartuje pouze aplikaci. Pro produkční Compose nastav příslušný `COMPOSE_FILE`. Klíče se nevypisují ani nepředávají veřejnému webovému procesu. Tento wrapper bez vlastního MaxMind přístupu nebyl ověřen živým stažením; integrační testy ověřují bezpečné předání konfigurace a zpracování chyb. Kontrola hashů/TLS náleží oficiálnímu updateru, nezakazuj ji.
 
 Volitelné `ENABLE_RDNS=true` provádí pouze PTR lookup veřejných IP s timeoutem. `ENABLE_TOR=true` denně stahuje pevnou adresu `https://check.torproject.org/torbulkexitlist`; případnou síťovou politiku nastav jen na tento host. Selhání enrichmentu neblokuje příjem událostí.
 
@@ -92,7 +92,7 @@ Ověř z internetu TLS a hlavičky, SSH log i jeho původní IP, mapu se souřad
 
 ## 7. Retence a provoz
 
-- Aplikační retence se provádí při startu a každou hodinu; syrové události a staré IP cache se mažou. Denní souhrny a HMAC unikátních IP zůstávají. Žebříčky mimo retenční okno nejsou k dispozici.
+- Aplikační retence se provádí při startu a každou hodinu; syrové události a staré IP cache se mažou. Denní souhrny a pseudonymní HMAC identifikátory unikátních IP zůstávají. Žebříčky mimo retenční okno nejsou k dispozici.
 - Cowrie rotuje JSON log každý den. `scripts/prune-cowrie-logs.sh` odstraňuje pouze dost staré uzavřené rotace, nikdy aktivní `cowrie.json`; plánuj denně a sleduj disk. TTY je vypnuté, artefakty ve zvláštním state volume s limitem velikosti na soubor; nová síťová stažení blokuje seccomp.
 - fail2ban log rotuj pomocí `deploy/fail2ban.logrotate`, po přejmenování použij `fail2ban-client flushlogs`; ověř správná práva nového souboru. Aplikace zvládá změnu inode i pozdní zápisy.
 - Rotující Docker stdout logy mají 10 MB × 3 na službu; obsahují i Cowrie diagnostiku, proto jsou neveřejné a podléhají stejnému účelu zpracování a omezenému přístupu.

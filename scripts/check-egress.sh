@@ -32,3 +32,16 @@ finally:
 if failures:
     raise SystemExit('EGRESS IS NOT ISOLATED: ' + ', '.join(failures))
 PY
+# An open host port is a stronger check than probing a port which may be closed.
+python3 - <<'PY'
+import socket, subprocess
+with socket.socket() as listener:
+    listener.bind(('0.0.0.0',0)); listener.listen(1)
+    port=listener.getsockname()[1]
+    result=subprocess.run(['docker','compose','exec','-T','cowrie','/cowrie/cowrie-env/bin/python3','-c',f'import socket; socket.create_connection(("172.30.77.1",{port}),2)'],capture_output=True,text=True)
+    if result.returncode==0:
+        raise SystemExit('UNSAFE: Cowrie reached an active host listener')
+    if 'PermissionError' not in result.stderr:
+        raise SystemExit('Host isolation did not demonstrate seccomp enforcement; inspect the active profile')
+print('BLOCKED active host listener (seccomp enforced)')
+PY

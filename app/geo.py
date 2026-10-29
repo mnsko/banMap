@@ -7,6 +7,7 @@ import dns.asyncresolver
 import dns.exception
 import geoip2.database
 import geoip2.errors
+import maxminddb
 import httpx
 from .db import utcnow
 from .sanitize import clean
@@ -25,7 +26,7 @@ class Geo:
     def open(self, name):
         try:
             return geoip2.database.Reader(str(self.settings.geo_dir / name))
-        except (OSError, ValueError):
+        except (OSError, ValueError, maxminddb.InvalidDatabaseError):
             logger.warning('%s unavailable; coordinates/ASN may be absent', name)
             return None
 
@@ -33,15 +34,18 @@ class Geo:
         result = {'country_code':None,'country':None,'city':None,'lat':None,'lon':None,'asn':None,'asn_org':None}
         if not ipaddress.ip_address(ip).is_global:
             return result
-        try:
-            if self.city:
+        if self.city:
+            try:
                 city = self.city.city(ip)
                 result.update(country_code=city.country.iso_code, country=clean(city.country.name,128), city=clean(city.city.name,128), lat=city.location.latitude, lon=city.location.longitude)
-            if self.asn:
+            except geoip2.errors.GeoIP2Error:
+                pass
+        if self.asn:
+            try:
                 asn = self.asn.asn(ip)
                 result.update(asn=asn.autonomous_system_number, asn_org=clean(asn.autonomous_system_organization,256))
-        except geoip2.errors.GeoIP2Error:
-            pass
+            except geoip2.errors.GeoIP2Error:
+                pass
         return result
 
     async def enrich(self):

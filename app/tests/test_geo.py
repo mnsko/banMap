@@ -27,3 +27,36 @@ def test_city_asn_lookup_and_cache(db,settings,event):
     assert result['resolved_at']
     assert geo.lookup('10.0.0.1')['lat'] is None
     geo.close()
+
+
+def test_real_maxmind_databases_and_first_event_projection(db,settings,event):
+    from pathlib import Path
+    import shutil
+    from app.queries import Queries
+    fixtures=Path(__file__).parent/'fixtures'
+    settings.geo_dir.mkdir()
+    shutil.copyfile(fixtures/'GeoIP2-City-Test.mmdb',settings.geo_dir/'GeoLite2-City.mmdb')
+    shutil.copyfile(fixtures/'GeoLite2-ASN-Test.mmdb',settings.geo_dir/'GeoLite2-ASN.mmdb')
+    geo=Geo(db,settings)
+    info=geo.lookup('81.2.69.160')
+    assert info['country_code']=='GB'
+    assert info['city']=='London'
+    assert 50 < info['lat'] < 52 and -1 < info['lon'] < 1
+    assert geo.lookup('1.0.0.1')['asn']==15169
+    assert geo.lookup('10.0.0.1')['lat'] is None
+    db.geo_lookup=geo.lookup
+    db.insert(event(ip='81.2.69.160'))
+    feed=Queries(db,settings).events()
+    assert feed[0]['lat']==info['lat']
+    assert feed[0]['lon']==info['lon']
+    assert 'password' not in feed[0]
+    geo.close()
+
+
+def test_corrupt_database_does_not_crash_ingestion(db,settings):
+    settings.geo_dir.mkdir()
+    (settings.geo_dir/'GeoLite2-City.mmdb').write_bytes(b'not-a-database')
+    geo=Geo(db,settings)
+    assert geo.city is None
+    assert geo.lookup('8.8.8.8')['lat'] is None
+    geo.close()

@@ -12,12 +12,23 @@ Potřebuješ Linux, Python 3.12 a Docker Engine s Compose ≥ 2.24.4.
 docker compose up -d --build
 .venv/bin/python -m pytest -q
 ./scripts/check-egress.sh
-.venv/bin/python scripts/smoke.py
+python3 scripts/check-containers.py
+.venv/bin/python scripts/smoke.py --restart
 ```
 
 Web poslouchá lokálně na portu 8080, honeypot na portu 2222. Aplikace samotná žádný hostitelský port nepublikuje. Pro úpravy backendu spusť po změně `docker compose up -d --build app`. V cloudu s read-only domovským adresářem nastav před buildem `export DOCKER_CONFIG="$PWD/runtime/docker"`.
 
 GeoLite2 databáze nejsou součástí repozitáře. Bez nich fungují logy, API, žebříčky a SSE, ale mapa nemá souřadnice. Doplň legálně získané `geoip/GeoLite2-City.mmdb` a `geoip/GeoLite2-ASN.mmdb`, nastav jim práva 644 a restartuj aplikaci. Viz [nasazení](docs/deployment.md).
+
+Volitelný test UI v Chromium (desktop, mobil a neaktivní XSS vstup):
+
+```sh
+.venv/bin/python -m pip install -r requirements-browser.txt
+.venv/bin/python -m playwright install chromium
+.venv/bin/python scripts/browser-smoke.py
+```
+
+GitHub Actions spouští backend testy, Compose, izolaci, restart i tyto prohlížečové testy. Skripty byly ověřeny lokálně; výsledek vzdáleného CI je potřeba kontrolovat samostatně.
 
 ## Co je uvnitř
 

@@ -1,0 +1,44 @@
+name: Validate observatory
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - name: Prepare verified dependencies and images
+        run: ./scripts/install.sh
+      - name: Unit and API tests
+        run: .venv/bin/python -m pytest -q
+      - name: Compose configuration
+        run: |
+          docker compose config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+      - name: Start isolated stack
+        run: docker compose up -d --wait --wait-timeout 90
+      - name: Isolation and end-to-end readiness
+        run: |
+          ./scripts/check-egress.sh
+          .venv/bin/python scripts/smoke.py --restart
+          python scripts/check-containers.py
+      - name: Browser dependencies
+        run: |
+          python -m pip install -r requirements-browser.txt
+          python -m playwright install --with-deps chromium
+      - name: Desktop, mobile and hostile-input browser checks
+        run: python scripts/browser-smoke.py
+      - name: Diagnostics on failure
+        if: failure()
+        run: docker compose ps
+      - name: Stop test stack
+        if: always()
+        run: docker compose down
