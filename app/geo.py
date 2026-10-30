@@ -2,6 +2,7 @@
 from datetime import timedelta
 import asyncio
 import ipaddress
+import json
 import logging
 import dns.asyncresolver
 import dns.exception
@@ -22,10 +23,29 @@ class Geo:
         self.asn = self.open('GeoLite2-ASN.mmdb')
         self.tor_ips = set()
         self.tor_checked = None
+        versions = json.dumps([
+            [reader.metadata().database_type, reader.metadata().build_epoch] if reader else None
+            for reader in (self.city, self.asn)
+        ])
+        previous = db.query("SELECT value FROM metadata WHERE key='geo_database_versions'")
+        if not previous or previous[0]['value'] != versions:
+            with db.transaction() as connection:
+                connection.execute('UPDATE ip_info SET resolved_at=NULL')
+                if self.city is None:
+                    connection.execute('UPDATE ip_info SET country_code=NULL,country=NULL,city=NULL,lat=NULL,lon=NULL')
+                if self.asn is None:
+                    connection.execute('UPDATE ip_info SET asn=NULL,asn_org=NULL')
+                connection.execute("INSERT OR REPLACE INTO metadata VALUES ('geo_database_versions',?)",(versions,))
 
     def open(self, name):
         try:
-            return geoip2.database.Reader(str(self.settings.geo_dir / name))
+            reader = geoip2.database.Reader(str(self.settings.geo_dir / name))
+            suffix = '-' + name.removesuffix('.mmdb').split('-')[-1]
+            if not reader.metadata().database_type.endswith(suffix):
+                reader.close()
+                logger.warning('%s has an incompatible database type; lookup disabled', name)
+                return None
+            return reader
         except (OSError, ValueError, maxminddb.InvalidDatabaseError):
             logger.warning('%s unavailable; coordinates/ASN may be absent', name)
             return None

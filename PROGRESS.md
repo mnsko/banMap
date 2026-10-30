@@ -25,7 +25,9 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] Na VPS se stáhl skutečný Cloudflare seznam (15 IPv4 / 7 IPv6), produkční Cloudflare Caddy konfigurace prošla validací.
 - [x] Oba hostitelské guardy jsou nainstalované a active. Cowrie 3.1.4 běží healthy pouze v interní síti; na skutečném VPS prošly všechny egress testy včetně aktivního hostitelského listeneru a seccomp enforcement.
 - [x] Backend na VPS běží healthy: status ok, průběžný ingest bez chyb čtení, oba logy čitelné, SQLite WAL a quick_check OK. Nula událostí před otevřením veřejného honeypotu je očekávaná.
-- [ ] Veřejný SSH vstup honeypotu a HTTPS čekají na spuštění/ověření; produkční GeoLite2 databáze ještě chybí.
+- [x] Veřejné služby spuštěny: Caddy TCP 80/443 a honeypot gateway TCP 22. Přes Cloudflare prošel veřejný HTTPS health check a API se stavem 200, no-store, DYNAMIC a HSTS. Krátké počáteční TLS chyby 525 se při dalších pokusech vyřešily.
+- [ ] Ověřit skutečný SSH pokus z internetu a jeho živé zobrazení bez reloadu stránky.
+- [ ] Produkční GeoLite2 databáze chybí; uživatel zatím nemá MaxMind účet. Updater je připraven pro hostitele bez venv, živé licencované stažení čeká na jeho přístup.
 - [ ] Ověřit guardy po restartu Dockeru/rebootu a skutečný veřejný Cloudflare HTTP/HTTPS provoz.
 
 ## Hotovo a ověřeno v lokálním cloudu
@@ -45,7 +47,7 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] End-to-end SSH → skutečný log → SQLite → SSE opakovaně přibližně 1,5 s; unikátní testovací heslo se ve veřejných odpovědích neobjevuje.
 - [x] Restart aplikace zachovává historii bez duplicit.
 - [x] Runtime inspekce všech čtyř kontejnerů: non-root, read-only root, cap_drop ALL, no-new-privileges, limity CPU/RAM/PID. Aplikace nemá publikovaný port a zapisuje pouze do `/data`.
-- [x] 66 backend testů prošlo (včetně validace Cloudflare prefixů a zachování policy při selhání). Skripty pro browser, SSH/SSE, restart a izolaci jsou samostatně opakovatelné.
+- [x] 70 backend testů prošlo (včetně Cloudflare policy, produkčního updateru a přepočtu dříve uložených IP po instalaci GeoLite2). Skripty pro browser, SSH/SSE, restart a izolaci jsou samostatně opakovatelné.
 - [x] `scripts/install.sh` byl skutečně spuštěn a prošel; ověřené wheelhouse a frontend artefakty, offline Docker build, oba Compose soubory validní, lokální i produkční Caddy konfigurace validní.
 - [x] README, původní plán, dokumentace Cowrie/izolace, bezpečný návod nasazení a provozní skripty.
 - [x] GitHub Actions workflow pro stejné kontroly; jeho vzdálený výsledek je samostatná věc, není nahrazován lokálními výsledky.
@@ -76,7 +78,8 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] Hostitelské DOCKER-USER/INPUT guardy nainstalovány na VPS; oba systemd units active, skutečné Cowrie egress testy prošly.
 - [ ] Ověřit jejich obnovení po restartu Dockeru a rebootu i veřejný webový provoz přes Cloudflare.
 - [ ] Dodat licencované GeoLite2 City + ASN a nastavit aktualizace. Živé stažení pomocí vlastního MaxMind účtu nebylo bez přihlašovacích údajů provedeno.
-- [ ] Veřejné HTTPS/Caddy/ACME, HSTS, správné příchozí porty a end-to-end test z internetu včetně původní veřejné IP.
+- [x] Veřejné HTTPS a API přes Cloudflare fungují, no-store/DYNAMIC/HSTS ověřeny výstupem z VPS.
+- [ ] Ověřit celý SSH → log → API → živý browser feed průchod z internetu včetně původní veřejné IP.
 - [ ] Zálohy, monitoring místa, pravidelné promazávání rotací a obnovení po rebootu VPS.
 - [ ] V cloudovém nastavení zkontrolovat a uložit draft, potom prostředí publikovat. Obnovení snapshotu v novém tasku dosud nebylo ověřeno.
 

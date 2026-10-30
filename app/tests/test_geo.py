@@ -60,3 +60,34 @@ def test_corrupt_database_does_not_crash_ingestion(db,settings):
     assert geo.city is None
     assert geo.lookup('8.8.8.8')['lat'] is None
     geo.close()
+
+
+def test_installing_database_reenriches_previously_seen_ips(db,settings,event):
+    from pathlib import Path
+    import shutil
+    db.insert(event(ip='81.2.69.160'))
+    before=Geo(db,settings)
+    asyncio.run(before.enrich())
+    cached=db.query('SELECT lat,resolved_at FROM ip_info')[0]
+    assert cached['lat'] is None and cached['resolved_at'] is not None
+    before.close()
+    settings.geo_dir.mkdir()
+    fixtures=Path(__file__).parent/'fixtures'
+    shutil.copyfile(fixtures/'GeoIP2-City-Test.mmdb',settings.geo_dir/'GeoLite2-City.mmdb')
+    shutil.copyfile(fixtures/'GeoLite2-ASN-Test.mmdb',settings.geo_dir/'GeoLite2-ASN.mmdb')
+    after=Geo(db,settings)
+    asyncio.run(after.enrich())
+    assert db.query('SELECT lat FROM ip_info')[0]['lat']==51.5142
+    assert db.query('SELECT count(*) n FROM events')[0]['n']==1
+    after.close()
+
+
+def test_wrong_database_edition_is_unavailable(db,settings):
+    from pathlib import Path
+    import shutil
+    settings.geo_dir.mkdir()
+    shutil.copyfile(Path(__file__).parent/'fixtures/GeoLite2-ASN-Test.mmdb',settings.geo_dir/'GeoLite2-City.mmdb')
+    geo=Geo(db,settings)
+    assert geo.city is None
+    assert geo.lookup('1.0.0.1')['lat'] is None
+    geo.close()

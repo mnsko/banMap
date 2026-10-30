@@ -24,18 +24,17 @@ def test_literal_env_and_no_credentials_in_arguments(updater,monkeypatch):
     def run(args,**kwargs):
         calls.append((args,kwargs))
         return SimpleNamespace(returncode=0)
-    class Reader:
-        def __init__(self,path): self.path=path
-        def __enter__(self): return self
-        def __exit__(self,*args): pass
-        def metadata(self): return SimpleNamespace(database_type=Path(self.path).stem)
     monkeypatch.setattr(updater.subprocess,'run',run)
-    monkeypatch.setattr(updater.geoip2.database,'Reader',Reader)
     updater.main()
     assert payload==calls[0][1]['env']['GEOIPUPDATE_LICENSE_KEY']
     assert payload not in str(calls[0][0])
     assert calls[0][0][1:3]==['-f','/dev/null']
-    assert calls[1][0]==['docker','compose','restart','app']
+    assert calls[1][0][:6]==['docker','compose','exec','-T','app','python']
+    for key in ['MAXMIND_ACCOUNT_ID','MAXMIND_LICENSE_KEY','GEOIPUPDATE_LICENSE_KEY']:
+        if key in calls[1][1]['env'] or key in calls[2][1]['env']:
+            pytest.fail('Updater credentials leaked into a Docker subprocess environment')
+    assert payload not in str(calls[1][0])
+    assert calls[2][0]==['docker','compose','restart','app']
     assert not (updater.ROOT/'should-never-exist').exists()
 
 
@@ -54,3 +53,30 @@ def test_update_failure_never_exposes_upstream_output(updater,monkeypatch):
 
 def test_update_requires_actual_credentials(updater):
     with pytest.raises(SystemExit,match='MAXMIND_ACCOUNT_ID is missing'): updater.main()
+
+
+def test_failed_validation_does_not_restart_app(updater,monkeypatch):
+    monkeypatch.setenv('MAXMIND_ACCOUNT_ID','123')
+    monkeypatch.setenv('MAXMIND_LICENSE_KEY','private-marker')
+    geo=updater.ROOT/'geoip';geo.mkdir()
+    for name in ['GeoLite2-City.mmdb','GeoLite2-ASN.mmdb']:(geo/name).touch()
+    calls=[]
+    def run(args,**kwargs):
+        calls.append(args)
+        return SimpleNamespace(returncode=0 if len(calls)==1 else 1)
+    monkeypatch.setattr(updater.subprocess,'run',run)
+    with pytest.raises(SystemExit,match='could not be validated'):updater.main()
+    assert len(calls)==2
+    assert all('private-marker' not in str(args) for args in calls)
+
+
+def test_missing_download_cannot_restart_app(updater,monkeypatch):
+    monkeypatch.setenv('MAXMIND_ACCOUNT_ID','123')
+    monkeypatch.setenv('MAXMIND_LICENSE_KEY','private-marker')
+    calls=[]
+    def run(args,**kwargs):
+        calls.append(args)
+        return SimpleNamespace(returncode=0)
+    monkeypatch.setattr(updater.subprocess,'run',run)
+    with pytest.raises(SystemExit,match='database is missing'):updater.main()
+    assert len(calls)==1
