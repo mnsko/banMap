@@ -24,7 +24,8 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] Cloudflare Compose/Caddy konfigurace validována v cloudu; skutečný Caddy test s ověřeným TLS potvrzuje bezpečné předání klientské IP, ignorování podvrženého XFF, no-store a 403 pro nedůvěryhodnou protistranu. Hostitelská firewallová pravidla a veřejný Cloudflare/ACME provoz čekají na ověření na VPS.
 - [x] Na VPS se stáhl skutečný Cloudflare seznam (15 IPv4 / 7 IPv6), produkční Cloudflare Caddy konfigurace prošla validací.
 - [x] Oba hostitelské guardy jsou nainstalované a active. Cowrie 3.1.4 běží healthy pouze v interní síti; na skutečném VPS prošly všechny egress testy včetně aktivního hostitelského listeneru a seccomp enforcement.
-- [ ] Backend, veřejný SSH vstup honeypotu, geolokace a veřejné HTTPS ještě čekají na spuštění/ověření.
+- [x] Backend na VPS běží healthy: status ok, průběžný ingest bez chyb čtení, oba logy čitelné, SQLite WAL a quick_check OK. Nula událostí před otevřením veřejného honeypotu je očekávaná.
+- [ ] Veřejný SSH vstup honeypotu a HTTPS čekají na spuštění/ověření; produkční GeoLite2 databáze ještě chybí.
 - [ ] Ověřit guardy po restartu Dockeru/rebootu a skutečný veřejný Cloudflare HTTP/HTTPS provoz.
 
 ## Hotovo a ověřeno v lokálním cloudu

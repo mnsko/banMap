@@ -10,9 +10,11 @@ Tato volitelná varianta vrstvi `docker-compose.cloudflare.yml` až za základn�
 - V Cache Rules nastav **Bypass cache** pro následující výraz. Pokud máš obecné cache pravidlo, ujisti se, že výsledné vyhodnocení těchto cest opravdu vede na bypass:
 
 ```text
-starts_with(http.request.uri.path, "/api/") or
-http.request.uri.path eq "/healthz" or
-starts_with(http.request.uri.path, "/.well-known/acme-challenge/")
+(http.host eq "ssh.mnsk.me" and (
+  starts_with(http.request.uri.path, "/api/") or
+  http.request.uri.path eq "/healthz" or
+  starts_with(http.request.uri.path, "/.well-known/acme-challenge/")
+))
 ```
 
 API/SSE navíc dostává `Cache-Control: no-store` z Caddy. Nepoužívej pro tyto cesty Cache Everything ani interaktivní WAF challenge. Pokud ACME validace selže na WAF pravidle, povol pouze příslušnou challenge cestu; nevypínej ochrany celé zóny. Web Analytics a Rocket Loader nejsou pro aplikaci potřeba; aplikace má vlastní CSP a nemá analytické skripty.
