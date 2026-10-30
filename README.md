@@ -52,4 +52,6 @@ sudo ./scripts/prepare-production.sh
 sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
+Pro web za Cloudflare proxy použij také [Cloudflare postup](docs/cloudflare.md) a třetí Compose override; zahrnuje ověření proxy IP, ochranu originu a bypass cache API/SSE. Honeypot i správní SSH pak používají přímo IP VPS.
+
 `docker compose down` data nemaže. `down -v` smaže databázi, logy i klíče honeypotu. Zálohuj pojmenované volumes a chraň zálohy stejně jako původní syrová data. Nepřidávej `.env`, databáze, skutečné logy ani MaxMind databáze do Gitu.

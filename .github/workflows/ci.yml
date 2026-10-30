@@ -30,6 +30,8 @@ jobs:
           ./scripts/check-egress.sh
           .venv/bin/python scripts/smoke.py --restart
           python scripts/check-containers.py
+      - name: Cloudflare proxy trust and origin protection
+        run: python scripts/check-cloudflare.py
       - name: Browser dependencies
         run: |
           python -m pip install -r requirements-browser.txt

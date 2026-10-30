@@ -177,7 +177,7 @@ async function init() {
     $('privacy-caption').textContent = 'Only passwords observed from at least ' + config.password_min_ips + ' distinct sources.';
     $('about-threshold').textContent = config.password_min_ips;
     $('about-retention').textContent = config.retention_days;
-    $('retention').textContent = config.retention_days + '-day raw retention. No cookies. No trackers.';
+    $('retention').textContent = config.retention_days + '-day raw retention. No app cookies. No analytics.';
     // Open stream before fetching history; IDs prevent reconnect/history duplicates.
     const stream = new EventSource('/api/stream');
     stream.onopen = () => {$('connection').textContent = 'LIVE SENSOR'; $('connection').classList.add('live');};

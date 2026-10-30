@@ -1,0 +1,16 @@
+[Unit]
+Description=BanMap Cloudflare-only web ingress
+Requires=docker.service
+Wants=network-online.target
+After=docker.service network-online.target
+PartOf=docker.service
+Before=banmap.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/banmap
+ExecStart=/opt/banmap/scripts/install-cloudflare-guard.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target docker.service

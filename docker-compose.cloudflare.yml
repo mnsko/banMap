@@ -1,0 +1,8 @@
+# Layer after docker-compose.yml and docker-compose.prod.yml.
+# Fetch the required, non-secret proxy.env using scripts/cloudflare-policy.py first.
+services:
+  caddy:
+    env_file:
+      - ${CLOUDFLARE_POLICY_FILE:-./runtime/cloudflare/proxy.env}
+    volumes:
+      - ./deploy/Caddyfile.cloudflare:/etc/caddy/Caddyfile:ro

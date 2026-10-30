@@ -17,8 +17,12 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] UFW aktivní: povoleny pouze TCP 22/22022/80/443, ostatní příchozí provoz zakázán; výstup potvrzuje IPv4 i IPv6 pravidla.
 - [x] Fail2ban konfigurační test prošel, server odpovídá pong, aktivní jail `sshd` se systemd backendem a akcí omezenou na TCP 22022 podle aplikované konfigurace.
 - [x] Vyhrazený log `/var/log/banmap/fail2ban/fail2ban.log`: root / banmap-logs, GID 10001, adresář 0750 a soubor 0640; nainstalována konfigurace rotace, její skutečný běh je ještě potřeba ověřit.
-- [x] Připraven a v cloudu spuštěn produkční build helper s připnutým Pythonem 3.12 v Dockeru; nevyžaduje změnu výchozího Pythonu Ubuntu 26.04. Cold-cache síťové stažení helperem zbývá ověřit na VPS.
-- [ ] Docker, produkční honeypot, hostitelský egress guard, geolokace a veřejné HTTPS zatím nenasazeny.
+- [x] Připraven a v cloudu spuštěn produkční build helper s připnutým Pythonem 3.12 v Dockeru; nevyžaduje změnu výchozího Pythonu Ubuntu 26.04. Cold-cache stažení a build následně úspěšně ověřil uživatel na VPS.
+- [x] Docker z oficiálního repozitáře na VPS úspěšně spustil hello-world, existuje řetězec DOCKER-USER. Správa Dockeru přes sudo.
+- [x] Projekt naklonován do `/opt/banmap`; produkční helper úspěšně připravil oba obrazy i na VPS (včetně cold-cache stažení závislostí).
+- [x] Uživatel zvolil web za Cloudflare proxy, honeypot přímo na IP; příprava varianty je popsána v `docs/cloudflare.md`.
+- [x] Cloudflare Compose/Caddy konfigurace validována v cloudu; skutečný Caddy test s ověřeným TLS potvrzuje bezpečné předání klientské IP, ignorování podvrženého XFF, no-store a 403 pro nedůvěryhodnou protistranu. Hostitelská firewallová pravidla a veřejný Cloudflare/ACME provoz čekají na ověření na VPS.
+- [ ] Produkční honeypot, hostitelské guardy, geolokace a veřejné HTTPS zatím nenasazeny.
 
 ## Hotovo a ověřeno v lokálním cloudu
 
@@ -37,7 +41,7 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] End-to-end SSH → skutečný log → SQLite → SSE opakovaně přibližně 1,5 s; unikátní testovací heslo se ve veřejných odpovědích neobjevuje.
 - [x] Restart aplikace zachovává historii bez duplicit.
 - [x] Runtime inspekce všech čtyř kontejnerů: non-root, read-only root, cap_drop ALL, no-new-privileges, limity CPU/RAM/PID. Aplikace nemá publikovaný port a zapisuje pouze do `/data`.
-- [x] 52 backend testů prošlo. Skripty pro browser, SSH/SSE, restart a izolaci jsou samostatně opakovatelné.
+- [x] 66 backend testů prošlo (včetně validace Cloudflare prefixů a zachování policy při selhání). Skripty pro browser, SSH/SSE, restart a izolaci jsou samostatně opakovatelné.
 - [x] `scripts/install.sh` byl skutečně spuštěn a prošel; ověřené wheelhouse a frontend artefakty, offline Docker build, oba Compose soubory validní, lokální i produkční Caddy konfigurace validní.
 - [x] README, původní plán, dokumentace Cowrie/izolace, bezpečný návod nasazení a provozní skripty.
 - [x] GitHub Actions workflow pro stejné kontroly; jeho vzdálený výsledek je samostatná věc, není nahrazován lokálními výsledky.
@@ -47,7 +51,7 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 
 | Fáze | Stav |
 |---|---|
-| 1. Host a honeypot | Lokální honeypot a izolace ověřeny; na VPS ověřeny správní SSH, aktualizace a reboot. Fail2ban a produkční honeypot zbývají. |
+| 1. Host a honeypot | Lokální honeypot a izolace ověřeny; na VPS ověřeny SSH, aktualizace, reboot, fail2ban a Docker build. Produkční honeypot a hostitelské guardy zbývají. |
 | 2. Aplikace a parsery | Hotovo a testováno. |
 | 3. Sanitizace | Hotovo, testy API i skutečného browser DOM. |
 | 4. Geolokace | Implementace a MMDB testy hotové; produkční databáze je potřeba dodat. |

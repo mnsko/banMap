@@ -1,0 +1,42 @@
+{
+    admin off
+    servers {
+        trusted_proxies static {$CLOUDFLARE_PROXY_RANGES}
+        trusted_proxies_strict
+        client_ip_headers CF-Connecting-IP
+        timeouts {
+            read_header 5s
+            read_body 10s
+            idle 30s
+        }
+    }
+}
+{$DOMAIN:ssh.mnsk.me} {
+    # Cloudflare terminates public TLS; the origin still requires a valid certificate.
+    tls {
+        issuer acme {
+            disable_tlsalpn_challenge
+        }
+    }
+    # Independent protection during Docker/firewall restarts; headers cannot bypass it.
+    @outside_cloudflare not remote_ip {$CLOUDFLARE_PROXY_RANGES}
+    respond @outside_cloudflare "Forbidden" 403
+    @api path /api/* /healthz
+    header @api Cache-Control "no-store"
+    header {
+        -Server
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        X-Frame-Options DENY
+    }
+    request_body {
+        max_size 1KB
+    }
+    reverse_proxy app:8000 {
+        header_up X-Forwarded-For {client_ip}
+        header_up -CF-Connecting-IP
+        flush_interval -1
+        header_down -Server
+    }
+}
