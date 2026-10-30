@@ -22,7 +22,10 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] Projekt naklonován do `/opt/banmap`; produkční helper úspěšně připravil oba obrazy i na VPS (včetně cold-cache stažení závislostí).
 - [x] Uživatel zvolil web za Cloudflare proxy, honeypot přímo na IP; příprava varianty je popsána v `docs/cloudflare.md`.
 - [x] Cloudflare Compose/Caddy konfigurace validována v cloudu; skutečný Caddy test s ověřeným TLS potvrzuje bezpečné předání klientské IP, ignorování podvrženého XFF, no-store a 403 pro nedůvěryhodnou protistranu. Hostitelská firewallová pravidla a veřejný Cloudflare/ACME provoz čekají na ověření na VPS.
-- [ ] Produkční honeypot, hostitelské guardy, geolokace a veřejné HTTPS zatím nenasazeny.
+- [x] Na VPS se stáhl skutečný Cloudflare seznam (15 IPv4 / 7 IPv6), produkční Cloudflare Caddy konfigurace prošla validací.
+- [x] Oba hostitelské guardy jsou nainstalované a active. Cowrie 3.1.4 běží healthy pouze v interní síti; na skutečném VPS prošly všechny egress testy včetně aktivního hostitelského listeneru a seccomp enforcement.
+- [ ] Backend, veřejný SSH vstup honeypotu, geolokace a veřejné HTTPS ještě čekají na spuštění/ověření.
+- [ ] Ověřit guardy po restartu Dockeru/rebootu a skutečný veřejný Cloudflare HTTP/HTTPS provoz.
 
 ## Hotovo a ověřeno v lokálním cloudu
 
@@ -69,7 +72,8 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] Na skutečném Ubuntu 26.04 ověřeny `ssh.socket`/`ssh.service` a efektivní `sshd -T`; změny provedl uživatel podle vedeného postupu.
 - [x] Aktivní fail2ban pro správní SSH a čitelný vyhrazený UTC log adresář.
 - [ ] Ověřit skutečnou rotaci fail2ban logu a zachování oprávnění.
-- [ ] Nainstalovat a ověřit hostitelský DOCKER-USER/INPUT guard včetně persistence po restartu Dockeru a rebootu. Zde ověřena syntaxe skriptů a seccomp; hostitelská systemd/iptables konfigurace VPS nebyla aplikována.
+- [x] Hostitelské DOCKER-USER/INPUT guardy nainstalovány na VPS; oba systemd units active, skutečné Cowrie egress testy prošly.
+- [ ] Ověřit jejich obnovení po restartu Dockeru a rebootu i veřejný webový provoz přes Cloudflare.
 - [ ] Dodat licencované GeoLite2 City + ASN a nastavit aktualizace. Živé stažení pomocí vlastního MaxMind účtu nebylo bez přihlašovacích údajů provedeno.
 - [ ] Veřejné HTTPS/Caddy/ACME, HSTS, správné příchozí porty a end-to-end test z internetu včetně původní veřejné IP.
 - [ ] Zálohy, monitoring místa, pravidelné promazávání rotací a obnovení po rebootu VPS.

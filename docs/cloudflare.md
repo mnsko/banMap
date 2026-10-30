@@ -5,8 +5,8 @@ Tato volitelná varianta vrstvi `docker-compose.cloudflare.yml` až za základn�
 ## DNS, TLS a cache v Cloudflare
 
 - A záznam `ssh` směřuje na IPv4 VPS, **Proxied / oranžový mrak**.
-- SSL/TLS režim **Full (strict)**. Caddy získává veřejně důvěryhodný certifikát i pro spojení Cloudflare → origin. Není potřeba Cloudflare API token ani DNS challenge plugin.
-- **Always Use HTTPS ponech vypnuté**: HTTP → HTTPS přesměrovává Caddy. Port 80 musí přenést HTTP ACME challenge přes Cloudflare na origin, včetně obnovování certifikátu. TLS-ALPN challenge je v této variantě vypnutá, protože veřejné TLS ukončuje Cloudflare.
+- SSL/TLS režim **Full (strict)** nastav pouze pro tento hostname: Rules → Overview → Create rule → Configuration Rule, výraz `(http.host eq "ssh.mnsk.me")`, nastavení SSL → Strict / Full (strict). To ponechá ostatní hostname zóny beze změny. Cloudflare toto nastavení dokumentuje v [Configuration Rules settings](https://developers.cloudflare.com/rules/configuration-rules/settings/#ssl). Caddy získává veřejně důvěryhodný certifikát i pro spojení Cloudflare → origin. Není potřeba Cloudflare API token ani DNS challenge plugin.
+- HTTP → HTTPS přesměrovává Caddy. Port 80 musí přenést HTTP ACME challenge přes Cloudflare na origin, včetně obnovování certifikátu. Pokud je Always Use HTTPS pro celou zónu již zapnuté, nevypínej ho bez posouzení ostatních webů; před zveřejněním je potřeba ověřit skutečnou ACME cestu a případně zvolit odpovídající způsob vydání certifikátu. TLS-ALPN challenge je v této variantě vypnutá, protože veřejné TLS ukončuje Cloudflare.
 - V Cache Rules nastav **Bypass cache** pro následující výraz. Pokud máš obecné cache pravidlo, ujisti se, že výsledné vyhodnocení těchto cest opravdu vede na bypass:
 
 ```text
