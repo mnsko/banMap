@@ -14,7 +14,10 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [x] Ověřena socket activation a explicitní původní `Port 22` v hlavním souboru; odstraněn pouze tento konflikt. `Port` je vícehodnotová volba, takže přidání 22022 samo neodebere 22.
 - [x] Systémové aktualizace a restart na jádro `7.0.0-42-generic`; po restartu žádná selhaná systemd služba, UTC a aktivní synchronizovaný NTP.
 - [x] Blok pro automatické bezpečnostní aktualizace s vypnutým automatickým rebootem dokončen podle potvrzení uživatele.
-- [ ] Ověřit konečný stav UFW a běžícího fail2ban pro TCP 22022; připravit vyhrazené logy a rotaci.
+- [x] UFW aktivní: povoleny pouze TCP 22/22022/80/443, ostatní příchozí provoz zakázán; výstup potvrzuje IPv4 i IPv6 pravidla.
+- [x] Fail2ban konfigurační test prošel, server odpovídá pong, aktivní jail `sshd` se systemd backendem a akcí omezenou na TCP 22022 podle aplikované konfigurace.
+- [x] Vyhrazený log `/var/log/banmap/fail2ban/fail2ban.log`: root / banmap-logs, GID 10001, adresář 0750 a soubor 0640; nainstalována konfigurace rotace, její skutečný běh je ještě potřeba ověřit.
+- [x] Připraven a v cloudu spuštěn produkční build helper s připnutým Pythonem 3.12 v Dockeru; nevyžaduje změnu výchozího Pythonu Ubuntu 26.04. Cold-cache síťové stažení helperem zbývá ověřit na VPS.
 - [ ] Docker, produkční honeypot, hostitelský egress guard, geolokace a veřejné HTTPS zatím nenasazeny.
 
 ## Hotovo a ověřeno v lokálním cloudu
@@ -60,7 +63,8 @@ Následující stav je ověřen výstupy příkazů a přihlášení, které už
 - [ ] DNS `ssh.mnsk.me` ukazuje na VPS. Produkční override nyní publikuje IPv4; AAAA přidat až s navrženou a ověřenou IPv6 cestou.
 - [x] Správní SSH 22022, pouze klíče, ne root, ověřeno z druhé relace před uvolněním 22 a znovu po rebootu VPS.
 - [x] Na skutečném Ubuntu 26.04 ověřeny `ssh.socket`/`ssh.service` a efektivní `sshd -T`; změny provedl uživatel podle vedeného postupu.
-- [ ] Aktivní fail2ban pouze pro správní SSH, UTC logy, čitelný vyhrazený log adresář a správná oprávnění po rotaci.
+- [x] Aktivní fail2ban pro správní SSH a čitelný vyhrazený UTC log adresář.
+- [ ] Ověřit skutečnou rotaci fail2ban logu a zachování oprávnění.
 - [ ] Nainstalovat a ověřit hostitelský DOCKER-USER/INPUT guard včetně persistence po restartu Dockeru a rebootu. Zde ověřena syntaxe skriptů a seccomp; hostitelská systemd/iptables konfigurace VPS nebyla aplikována.
 - [ ] Dodat licencované GeoLite2 City + ASN a nastavit aktualizace. Živé stažení pomocí vlastního MaxMind účtu nebylo bez přihlašovacích údajů provedeno.
 - [ ] Veřejné HTTPS/Caddy/ACME, HSTS, správné příchozí porty a end-to-end test z internetu včetně původní veřejné IP.

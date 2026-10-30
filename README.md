@@ -47,8 +47,9 @@ Cowrie je na vlastní interní síti. Malá HAProxy brána přijímá SSH a pře
 **Produkční override nespouštěj před bezpečným přesunem správního SSH a kontrolou konzole poskytovatele.** Postup, DNS, HTTPS, fail2ban, hostitelská firewallová ochrana a rotace: [docs/deployment.md](docs/deployment.md).
 
 ```sh
-# Až na připraveném VPS:
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Až na připraveném VPS; hostitelský Python 3.12 není potřeba:
+sudo ./scripts/prepare-production.sh
+sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 `docker compose down` data nemaže. `down -v` smaže databázi, logy i klíče honeypotu. Zálohuj pojmenované volumes a chraň zálohy stejně jako původní syrová data. Nepřidávej `.env`, databáze, skutečné logy ani MaxMind databáze do Gitu.

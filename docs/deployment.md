@@ -18,9 +18,11 @@ Konkrétní stav jednotek Ubuntu 26.04 musí být ověřen na VPS; tento cloud b
 
 ## 2. Docker, konfigurace a soubory
 
-Nainstaluj Docker Engine a Compose plugin ≥2.24.4 z důvěryhodného podepsaného zdroje, Python 3.12, fail2ban, ufw, logrotate a unattended-upgrades. Ubuntu 26.04 může mít jiné výchozí Python; explicitně zajisti 3.12 nebo si připrav wheelhouse na Linuxu s odpovídající architekturou a Pythonem 3.12.
+Nainstaluj Docker Engine a Compose plugin ≥2.24.4 z oficiálního podepsaného APT repozitáře Docker pro skutečný codename systému (`resolute` na Ubuntu 26.04), hostitelský Python 3, git, curl, ca-certificates, fail2ban, ufw, logrotate a unattended-upgrades. Oficiální [návod Docker pro Ubuntu](https://docs.docker.com/engine/install/ubuntu/) uvádí Ubuntu Resolute 26.04 jako podporované. Nepoužívej repozitář pro jinou verzi Ubuntu jako náhradu.
 
-Naklonuj repo, spusť `./scripts/install.sh`, vytvoř neveřejný `.env` podle `.env.example`, nastav `DOMAIN=ssh.mnsk.me`, případně `MASK_IPS=true` a `HIDE_IPS=TVA_IP`. Nezadávej produkční klíče do chatu ani do Gitu. Instalace `.env` automaticky nečte ani nepřepisuje.
+Naklonuj repo a spusť `sudo ./scripts/prepare-production.sh`. Tento produkční postup připravuje hashově ověřený wheelhouse v připnutém Python 3.12 Docker helperu a frontend artefakty pomocí standardní knihovny hostitelského Pythonu 3; Python 3.12 ani venv na hostiteli nepotřebuje. Existující úplný wheelhouse funguje offline, chybějící závislosti se stáhnou s ověřením TLS a lockfile hashů. Skript sestaví obrazy, ale nespustí služby ani neotevře porty. `scripts/install.sh` zůstává vývojovým postupem s hostitelským Pythonem 3.12 a testovací venv.
+
+Vytvoř neveřejný `.env` podle `.env.example`, nastav `DOMAIN=ssh.mnsk.me`, případně `MASK_IPS=true` a `HIDE_IPS=TVA_IP`. Nezadávej produkční klíče do chatu ani do Gitu. Instalace `.env` automaticky nečte ani nepřepisuje.
 
 Vytvoř `/var/log/banmap/fail2ban` (root, skupina s GID 10001, adresář 0750, logy 0640). Tento vyhrazený adresář se mountuje read-only. Nemountuj celé `/var/log`, Docker socket ani SSH klíče. Číselné GID musí odpovídat aplikaci i po rotaci.
 
