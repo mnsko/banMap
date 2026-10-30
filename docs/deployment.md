@@ -12,6 +12,8 @@ Lokální cloudová validace nezajišťuje přístup na VPS ani změnu DNS. Veř
 6. Ze druhého terminálu se **skutečně přihlas na 22022 klíčem**, zkontroluj sudo a konzoli. Pak teprve odeber 22 ze sshd i případného socket drop-inu. Znovu `sshd -t` a restart příslušné jednotky; `ss -lntp` musí potvrdit, že hostitelský sshd už na 22 neposlouchá.
 7. Vynucuj `PasswordAuthentication no`, `KbdInteractiveAuthentication no`, `PermitRootLogin no` a `AllowUsers tvuj-ucet`. OpenSSH u většiny voleb bere první nalezenou hodnotu; pouhé přidání `99-hardening.conf` nemusí přebít dřívější cloud-init konfiguraci. Použij vhodný pořádek a výsledek ověř pomocí `sshd -T -C user=tvuj-ucet,host=ssh.mnsk.me,addr=TVA_IP`.
 
+`Port` je vícehodnotová volba: hlavní `sshd_config` s aktivním `Port 22` přidá tento port i při dříve načteném `Port 22022` v drop-inu. Před finálním přechodem zazálohuj hlavní soubor a odeber pouze příslušnou starou direktivu. `sshd -T` musí vypsat právě jeden port, 22022; stejně tak socket nesmí dál poslouchat na 22. Tento konkrétní případ byl ověřen na Hicoria Ubuntu 26.04 VPS.
+
 Konkrétní stav jednotek Ubuntu 26.04 musí být ověřen na VPS; tento cloud běží v jiném prostředí. Žádný skript tohoto projektu nepřesouvá SSH bez operátora.
 
 ## 2. Docker, konfigurace a soubory

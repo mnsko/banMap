@@ -1,6 +1,21 @@
 # Stav projektu
 
-Aktualizováno: 2026-10-29. Tento dokument se aktualizuje s ověřenými milníky; neověřené produkční kroky zůstávají výslovně otevřené.
+Aktualizováno: 2026-10-30. Tento dokument se aktualizuje s ověřenými milníky; neověřené produkční kroky zůstávají výslovně otevřené.
+
+## Příprava skutečného VPS (2026-10-30)
+
+Následující stav je ověřen výstupy příkazů a přihlášení, které uživatel provedl na svém VPS; cloudový agent na server nemá přímé SSH připojení.
+
+- [x] Hicoria VPS: Ubuntu 26.04 LTS, x86_64, přibližně 1,6 GiB RAM, 1,6 GiB swap a 40 GB disk.
+- [x] Funkční webová záchranná konzole potvrzena uživatelem.
+- [x] Správní účet `mnsk`, přihlášení SSH klíčem a funkční sudo.
+- [x] Bezpečný přechod přes souběžné porty 22/22022 na výhradní správní port 22022; ověřeno z nové relace i po rebootu.
+- [x] Efektivní sshd konfigurace: `PermitRootLogin no`, `PasswordAuthentication no`, `KbdInteractiveAuthentication no`, `AuthenticationMethods publickey`, `AllowUsers mnsk`.
+- [x] Ověřena socket activation a explicitní původní `Port 22` v hlavním souboru; odstraněn pouze tento konflikt. `Port` je vícehodnotová volba, takže přidání 22022 samo neodebere 22.
+- [x] Systémové aktualizace a restart na jádro `7.0.0-42-generic`; po restartu žádná selhaná systemd služba, UTC a aktivní synchronizovaný NTP.
+- [x] Blok pro automatické bezpečnostní aktualizace s vypnutým automatickým rebootem dokončen podle potvrzení uživatele.
+- [ ] Ověřit konečný stav UFW a běžícího fail2ban pro TCP 22022; připravit vyhrazené logy a rotaci.
+- [ ] Docker, produkční honeypot, hostitelský egress guard, geolokace a veřejné HTTPS zatím nenasazeny.
 
 ## Hotovo a ověřeno v lokálním cloudu
 
@@ -29,7 +44,7 @@ Aktualizováno: 2026-10-29. Tento dokument se aktualizuje s ověřenými milník
 
 | Fáze | Stav |
 |---|---|
-| 1. Host a honeypot | Lokální honeypot a izolace ověřeny; změny skutečného VPS čekají na operátora/přístup. |
+| 1. Host a honeypot | Lokální honeypot a izolace ověřeny; na VPS ověřeny správní SSH, aktualizace a reboot. Fail2ban a produkční honeypot zbývají. |
 | 2. Aplikace a parsery | Hotovo a testováno. |
 | 3. Sanitizace | Hotovo, testy API i skutečného browser DOM. |
 | 4. Geolokace | Implementace a MMDB testy hotové; produkční databáze je potřeba dodat. |
@@ -43,8 +58,8 @@ Aktualizováno: 2026-10-29. Tento dokument se aktualizuje s ověřenými milník
 
 - [ ] Poskytovatel dovoluje honeypot; snapshot a otestovaná záchranná konzole.
 - [ ] DNS `ssh.mnsk.me` ukazuje na VPS. Produkční override nyní publikuje IPv4; AAAA přidat až s navrženou a ověřenou IPv6 cestou.
-- [ ] Správní SSH 22022, pouze klíče, ne root, ověřeno z druhé relace před uvolněním 22.
-- [ ] Na Ubuntu 26.04 ověřit `ssh.socket`/`ssh.service` a efektivní `sshd -T`; žádná vzdálená SSH konfigurace zde nebyla změněna.
+- [x] Správní SSH 22022, pouze klíče, ne root, ověřeno z druhé relace před uvolněním 22 a znovu po rebootu VPS.
+- [x] Na skutečném Ubuntu 26.04 ověřeny `ssh.socket`/`ssh.service` a efektivní `sshd -T`; změny provedl uživatel podle vedeného postupu.
 - [ ] Aktivní fail2ban pouze pro správní SSH, UTC logy, čitelný vyhrazený log adresář a správná oprávnění po rotaci.
 - [ ] Nainstalovat a ověřit hostitelský DOCKER-USER/INPUT guard včetně persistence po restartu Dockeru a rebootu. Zde ověřena syntaxe skriptů a seccomp; hostitelská systemd/iptables konfigurace VPS nebyla aplikována.
 - [ ] Dodat licencované GeoLite2 City + ASN a nastavit aktualizace. Živé stažení pomocí vlastního MaxMind účtu nebylo bez přihlašovacích údajů provedeno.
